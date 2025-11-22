@@ -36,7 +36,7 @@ export default function Login() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       if (user) {
-        router.replace("/dashboard");
+        router.replace("/faculty/dashboard");
       }
     });
     return () => unsubscribe();
@@ -64,7 +64,7 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      router.push("/dashboard");
+      router.push("/faculty/dashboard");
     } catch (err: any) {
       console.error("Login error:", err);
       if (err.code === "auth/invalid-credential") {
@@ -91,7 +91,7 @@ export default function Login() {
 
     try {
       await signInWithPopup(auth, provider);
-      router.push("/dashboard");
+      router.push("/faculty/dashboard");
     } catch (error: any) {
       console.error("Google Sign-In Error:", error);
       if (error.code === "auth/popup-closed-by-user") {

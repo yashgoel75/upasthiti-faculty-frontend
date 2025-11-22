@@ -5,13 +5,6 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -20,4 +13,19 @@ body {
 
 .clip-trapezium {
   clip-path: polygon(0 0, 95% 0, 78% 100%, 0% 100%);
+}
+
+@font-face {
+  font-family: "Samarkan";
+  src: url("/fonts/samarkan/samarkan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+.custom-class {
+  font-family: "Samarkan";
+}
+
+* {
+  transition: 200ms;
 }
