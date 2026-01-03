@@ -6,23 +6,19 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   BarChart3,
-  Users,
-  GraduationCap,
   Calendar,
   Settings,
   LogOut,
   Menu,
   X,
   User as UserIcon,
+  Bell,
 } from "lucide-react";
-import logo from "../../public/assets/upasthiti-logo.png";
 import { getAuth, signOut } from "firebase/auth";
 import "../page.css";
 import {
   onAuthStateChanged,
   User,
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
 } from "firebase/auth";
 
 import { auth } from "../../lib/firebase";
@@ -59,13 +55,8 @@ export default function FacultyLayout({
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", route: "/faculty/dashboard" },
     { icon: BarChart3, label: "Analytics", route: "/faculty/analytics" },
-    { icon: Users, label: "Faculty Details", route: "/faculty/faculty" },
-    {
-      icon: GraduationCap,
-      label: "Students Details",
-      route: "/faculty/students",
-    },
     { icon: Calendar, label: "Time Table", route: "/faculty/timetable" },
+    { icon: Bell, label: "Notify Parents", route: "/faculty/notify" },
     { icon: UserIcon, label: "Account", route: "/faculty/account" },
     { icon: Settings, label: "Settings", route: "/faculty/settings" },
   ];

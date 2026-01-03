@@ -77,45 +77,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  const getCount = async () => {
-    try {
-      const res = await axios.get(
-        "https://upasthiti-backend-production.up.railway.app/api/count"
-      );
-      const data = res.data;
-
-      const branchCounts: BranchCounts = {};
-      if (data.students?.byBranch) {
-        Object.keys(data.students.byBranch).forEach((branch) => {
-          branchCounts[branch] = data.students.byBranch[branch].count || 0;
-        });
-      }
-
-      setCounts({
-        studentCount: data.students?.total || 0,
-        facultyCounts: {
-          professor: data.faculty?.byType?.Professor?.count || 0,
-          professorOfPractice:
-            data.faculty?.byType?.ProfessorOfPractice?.count || 0,
-          associateProfessor:
-            data.faculty?.byType?.AssociateProfessor?.count || 0,
-          assistantProfessor:
-            data.faculty?.byType?.AssistantProfessor?.count || 0,
-        },
-        branchCounts,
-      });
-    } catch (error) {
-      console.error("Error fetching counts:", error);
-    }
-  };
-
-  useEffect(() => {
-    getCount();
-    // optional refresh interval (not enabled by default)
-    // const t = setInterval(getCount, CACHE_INTERVAL);
-    // return () => clearInterval(t);
-  }, []);
-
   const getGreeting = () => {
     const hours = new Date().getHours();
     if (hours < 12) return "Good Morning,";
@@ -292,10 +253,10 @@ export default function Dashboard() {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 bg-green-500 text-white p-2 rounded-full border"
+                className="absolute bottom-0 right-0 bg-red-500 cursor-pointer text-white p-2 rounded-full border"
                 title="Change profile"
               >
-                <Camera className="w-4 h-4" />
+                <Camera className="w-4 h-4" color="white" />
               </button>
               <input
                 ref={fileInputRef}
@@ -328,7 +289,7 @@ export default function Dashboard() {
                 <p>
                   <b>Email:</b>{" "}
                   {settings.privacy.showEmail
-                    ? facultyData?.email || "sonakshivj@vipstc.edu.in"
+                    ? facultyData?.officialEmail || "sonakshivj@vipstc.edu.in"
                     : "•••••"}
                 </p>
                 <p>

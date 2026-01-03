@@ -33,14 +33,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchUserDetails = async (uid: string) => {
     try {
       const res = await axios.get(
-        `https://upasthiti-backend-production.up.railway.app/api/faculty/single?uid=${uid}`
+        `https://upasthiti-backend-production.up.railway.app/api/faculty?uid=${uid}`
       );
-      const data = res.data.data[0];
+      const data = res.data;
+      console.log(res.data.data);
 
-      setFacultyData(data);
-      localStorage.setItem("facultyData", JSON.stringify(data));
+      setFacultyData(res.data.data);
+      // localStorage.setItem("facultyData", JSON.stringify(data));
 
-      return data;
+      return res.data.data;
     } catch (error) {
       console.error("Error fetching admin:", error);
       return null;
@@ -58,16 +59,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Try cached admin first
-      const cached = safeParse(localStorage.getItem("facultyData"));
+      // const cached = safeParse(localStorage.getItem("facultyData"));
 
-      if (cached) {
-        setFacultyData(cached);
-        setLoading(false);
-        return;
-      }
+      // if (cached) {
+      //   setFacultyData(cached);
+      //   setLoading(false);
+      //   return;
+      // }
 
       // If cached is invalid or missing, clear storage
-      localStorage.removeItem("facultyData");
+      // localStorage.removeItem("facultyData");
 
       // Fetch from backend
       const data = await fetchUserDetails(user.uid);
@@ -79,11 +80,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   // Sync state to localStorage when facultyData changes
-  useEffect(() => {
-    if (facultyData) {
-      localStorage.setItem("facultyData", JSON.stringify(facultyData));
-    }
-  }, [facultyData]);
+  // useEffect(() => {
+  //   if (facultyData) {
+  //     localStorage.setItem("facultyData", JSON.stringify(facultyData));
+  //   }
+  // }, [facultyData]);
 
   return (
     <AuthContext.Provider value={{ user, setFacultyData, facultyData, loading }}>

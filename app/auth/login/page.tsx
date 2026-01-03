@@ -3,6 +3,8 @@ import Image from "next/image";
 import campus from "../../../public/assets/campus.jpg";
 import vipsLogo from "../../../public/assets/vips-logo.jpeg";
 import logo from "../../../public/assets/upasthiti-logo.png";
+import vipsLogoMobile from "../../../public/assets/vipsLogoMobile.jpeg";
+
 import "../../page.css";
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -23,6 +25,8 @@ interface FormData {
 
 export default function Login() {
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -41,6 +45,16 @@ export default function Login() {
     });
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 630);
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -103,6 +117,7 @@ export default function Login() {
       setLoading(false);
     }
   };
+
   const handleForgotPassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setResetMessage("");
@@ -133,8 +148,8 @@ export default function Login() {
 
   return (
     <>
-      <div className="flex min-h-screen inter-normal">
-        <div className="relative w-[60%] shadow-lg ml-5 my-5 rounded-xl clip-trapezium overflow-hidden">
+      <div className="flex flex-col lg:flex-row min-h-screen inter-normal">
+        <div className="hidden lg:block relative lg:w-[60%] shadow-lg ml-5 my-5 rounded-xl clip-trapezium overflow-hidden">
           <Image
             src={campus}
             alt="Campus"
@@ -143,22 +158,38 @@ export default function Login() {
             priority
           />
         </div>
-        <div className="w-[40%] mr-5 my-5 rounded-e-xl p-5 flex flex-col items-center justify-center inter-normal">
-          <div className="flex justify-center items-center">
-            <Image src={logo} width={200} alt="logo" />
-            <div className="h-15 w-[1px] bg-gray-400 mx-5"></div>
-            <Image src={vipsLogo} width={250} alt="logo" className="pt-3" />
+
+        <div className="w-full lg:w-[40%] px-5 py-8 lg:mr-5 lg:my-5 lg:rounded-e-xl flex flex-col items-center justify-center inter-normal">
+          <div className="flex justify-center items-center gap-4 sm:gap-0">
+            <Image
+              src={logo}
+              width={150}
+              height={150}
+              alt="logo"
+              className="sm:w-[200px]"
+            />
+            <div className="block h-15 w-[1px] bg-gray-400 mx-2 md:mx-5"></div>
+            <Image
+              src={isMobile ? vipsLogoMobile : vipsLogo}
+              width={isMobile ? 100 : 200}
+              alt="logo"
+              className="pt-2 sm:pt-3"
+            />
           </div>
-          <div className="my-7 font-bold text-3xl">Sign In</div>
-          <div className="text-lg text-center">
-            Welcome to <b>Upasthiti</b>, the official AMR system of VIPS
+
+          <div className="my-5 lg:my-7 font-bold text-2xl sm:text-3xl text-center">
+            Sign In
+          </div>
+
+          <div className="text-base sm:text-lg text-center px-4">
+            Welcome to <b>Upasthiti</b>, the official AMS system of VIPS
           </div>
 
           {!showForgotPassword ? (
-            <div>
+            <div className="w-full max-w-md px-4">
               <form
                 onSubmit={handleLogin}
-                className="flex flex-col mt-8 w-96 space-y-5"
+                className="flex flex-col mt-6 sm:mt-8 w-full space-y-4 sm:space-y-5"
               >
                 <div className="flex flex-col space-y-2">
                   <label
@@ -219,49 +250,54 @@ export default function Login() {
                   {loading ? "Signing in..." : "Login"}
                 </button>
               </form>
-              <div className="flex w-full m-auto justify-center items-center my-3">
-                <div className="border-b-1 w-[50%] border-gray-300 mx-3"></div>
-                or
-                <div className="border-b-1 w-[50%] border-gray-300 mx-3"></div>
+
+              <div className="flex w-full justify-center items-center my-4">
+                <div className="border-b border-gray-300 w-full mx-3"></div>
+                <span className="text-gray-500 text-sm whitespace-nowrap">
+                  or
+                </span>
+                <div className="border-b border-gray-300 w-full mx-3"></div>
               </div>
+
               <div
                 onClick={handleSignInWithGoogle}
-                className="flex justify-center items-center gap-4 border-1 py-1 rounded-lg border-gray-200 cursor-pointer hover:bg-gray-200"
+                className="flex justify-center items-center gap-3 sm:gap-4 border border-gray-200 py-2 sm:py-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
               >
-                <div>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    x="0px"
-                    y="0px"
-                    width="30"
-                    height="30"
-                    viewBox="0 0 48 48"
-                  >
-                    <path
-                      fill="#FFC107"
-                      d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-                    ></path>
-                    <path
-                      fill="#FF3D00"
-                      d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-                    ></path>
-                    <path
-                      fill="#4CAF50"
-                      d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
-                    ></path>
-                    <path
-                      fill="#1976D2"
-                      d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
-                    ></path>
-                  </svg>
-                </div>
-                <div>Continue with Google</div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  x="0px"
+                  y="0px"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 48 48"
+                  className="sm:w-[30px] sm:h-[30px]"
+                >
+                  <path
+                    fill="#FFC107"
+                    d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+                  ></path>
+                  <path
+                    fill="#FF3D00"
+                    d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
+                  ></path>
+                  <path
+                    fill="#4CAF50"
+                    d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
+                  ></path>
+                  <path
+                    fill="#1976D2"
+                    d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
+                  ></path>
+                </svg>
+                <span className="text-sm sm:text-base">
+                  Continue with Google
+                </span>
               </div>
             </div>
           ) : (
             <form
               onSubmit={handleForgotPassword}
-              className="flex flex-col mt-8 w-96 space-y-5"
+              className="flex flex-col mt-6 sm:mt-8 w-full max-w-md px-4 space-y-4 sm:space-y-5"
             >
               <div className="text-center mb-2">
                 <h3 className="text-xl font-semibold">Reset Password</h3>
