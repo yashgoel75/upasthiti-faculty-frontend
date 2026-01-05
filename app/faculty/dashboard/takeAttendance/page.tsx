@@ -166,14 +166,14 @@ export default function TakeAttendance() {
           <div className="flex gap-4">
             <button
               onClick={() => markAll("Present")}
-              className="px-6 py-2 rounded-lg bg-green-600 text-white cursor-pointer"
+              className="px-4 py-1.5 font-medium rounded-lg bg-green-600 text-white cursor-pointer"
             >
               Mark All Present
             </button>
 
             <button
               onClick={() => markAll("Absent")}
-              className="px-6 py-2 rounded-lg bg-red-600 text-white cursor-pointer"
+              className="px-4 py-1.5 font-medium rounded-lg bg-red-500 text-white cursor-pointer"
             >
               Mark All Absent
             </button>
