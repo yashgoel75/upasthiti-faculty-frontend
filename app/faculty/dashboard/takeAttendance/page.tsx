@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Search, Check, X, Calendar, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Student {
   uid: string;
@@ -11,7 +12,7 @@ interface Student {
   enrollmentNo: string;
 }
 
-type AttendanceStatus = "Present" | "Absent";
+type AttendanceStatus = "Present" | "Absent" | "Unmarked";
 
 interface StudentAttendance {
   uid: string;
@@ -20,7 +21,7 @@ interface StudentAttendance {
 
 export default function TakeAttendance() {
   const searchParams = useSearchParams();
-
+  const router = useRouter();
   const branch = searchParams.get("branch");
   const semester = Number(searchParams.get("semester"));
   const section = searchParams.get("section");
@@ -30,7 +31,7 @@ export default function TakeAttendance() {
   const facultyId = searchParams.get("facultyId");
   const today = new Date().toDateString();
   const groupNumber = Number(searchParams.get("groupnumber")) || null;
-  const [sessionId, setSessionId] = useState<string | null>();
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [attendance, setAttendance] = useState<StudentAttendance[]>([]);
   const [search, setSearch] = useState("");
@@ -54,16 +55,28 @@ export default function TakeAttendance() {
         }
       );
 
-      setSessionId(res.data.session.sessionId);
+      const newSessionId = res.data.session.sessionId;
+      setSessionId(newSessionId);
       const list: Student[] = res.data.session.studentList;
       setStudents(list);
 
       const initialAttendance: StudentAttendance[] = list.map((s) => ({
         uid: s.uid,
-        status: "Absent",
+        status: "Unmarked",
       }));
 
-      setAttendance(initialAttendance);
+      const saved = localStorage.getItem(newSessionId);
+      if (saved) {
+        try {
+          const parsed: StudentAttendance[] = JSON.parse(saved);
+          setAttendance(parsed);
+        } catch (e) {
+          setAttendance(initialAttendance);
+        }
+      } else {
+        setAttendance(initialAttendance);
+      }
+
       setLoading(false);
     }
 
@@ -80,16 +93,22 @@ export default function TakeAttendance() {
     setAttendance((prev) => prev.map((s) => ({ ...s, status })));
   }
 
-  function saveAttendance() {
+  async function saveAttendance() {
     console.log("Final Attendance Data:", attendance);
-    const res = axios.post(
-      `https://upasthiti-backend-production.up.railway.app/api/faculty/attendance/mark`,
-      {
-        sessionId,
-        attendanceData: attendance,
-        facultyId,
-      }
-    );
+    try {
+      const res = await axios.post(
+        `https://upasthiti-backend-production.up.railway.app/api/faculty/attendance/mark`,
+        {
+          sessionId,
+          attendanceData: attendance,
+          facultyId,
+        }
+      );
+      localStorage.setItem(sessionId || "", JSON.stringify(attendance))
+      router.replace("/faculty/dashboard");
+    } catch (error) {
+      console.log("Error");
+    }
   }
 
   const filteredStudents = students.filter(
@@ -147,14 +166,14 @@ export default function TakeAttendance() {
           <div className="flex gap-4">
             <button
               onClick={() => markAll("Present")}
-              className="px-6 py-2 rounded-lg bg-green-600 text-white"
+              className="px-6 py-2 rounded-lg bg-green-600 text-white cursor-pointer"
             >
               Mark All Present
             </button>
 
             <button
               onClick={() => markAll("Absent")}
-              className="px-6 py-2 rounded-lg bg-red-600 text-white"
+              className="px-6 py-2 rounded-lg bg-red-600 text-white cursor-pointer"
             >
               Mark All Absent
             </button>
@@ -194,6 +213,8 @@ export default function TakeAttendance() {
                         className={`px-3 py-1 rounded-full text-sm font-medium ${
                           current?.status === "Present"
                             ? "bg-green-100 text-green-700"
+                            : current?.status === "Unmarked"
+                            ? "bg-yellow-100 text-yellow-700"
                             : "bg-red-100 text-red-700"
                         }`}
                       >

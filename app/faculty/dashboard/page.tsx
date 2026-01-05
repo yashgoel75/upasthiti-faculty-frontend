@@ -37,7 +37,8 @@ export default function Dashboard() {
   });
 
   const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const today = dayNames[new Date().getDay()];
+  // const today = dayNames[new Date().getDay()];
+  const today = "tuesday";
 
   useEffect(() => {
     const saved = localStorage.getItem("appSettings");
