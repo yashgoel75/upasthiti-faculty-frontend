@@ -3,39 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import axios from "axios";
-import { Search, Bell, Camera } from "lucide-react";
+import { Search, Bell, Camera, Clock } from "lucide-react";
 import Footer from "@/app/components/footer/page";
 import { useAuth } from "../..//context/auth";
 import { useTheme } from "@/app/context/theme";
-
-interface Faculty {
-  facultyId: string;
-  name: string;
-  profilePicture?: string;
-  email: string;
-  phone: number;
-  uid: string;
-  schoolId: string;
-  school?: { name: string };
-  timetable?: any[]; // optional, from your Faculty schema
-}
-
-interface FacultyCounts {
-  professor: number;
-  professorOfPractice: number;
-  associateProfessor: number;
-  assistantProfessor: number;
-}
-
-interface BranchCounts {
-  [key: string]: number;
-}
-
-interface CountsData {
-  studentCount: number;
-  facultyCounts: FacultyCounts;
-  branchCounts: BranchCounts;
-}
+import { useRouter } from "next/navigation";
 
 interface PrivacySettings {
   privacy: {
@@ -45,22 +17,17 @@ interface PrivacySettings {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const { theme } = useTheme();
-  const { user, setFacultyData, facultyData, loading } = useAuth();
-  const [counts, setCounts] = useState<CountsData>({
-    studentCount: 0,
-    facultyCounts: {
-      professor: 0,
-      professorOfPractice: 0,
-      associateProfessor: 0,
-      assistantProfessor: 0,
-    },
-    branchCounts: {},
-  });
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user, setFacultyData, facultyData } = useAuth();
+  const [loading, setLoading] = useState<boolean | null>(true);
 
-  const CACHE_INTERVAL = 50000;
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [schedule, setSchedule] = useState<any[]>([]);
+  const [totalWeeklyHours, setTotalWeeklyHours] = useState(0);
+  const [totalSubjects, setTotalSubjects] = useState(0);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [settings, setSettings] = useState<PrivacySettings>({
     privacy: {
@@ -69,13 +36,34 @@ export default function Dashboard() {
     },
   });
 
+  const today = "tuesday";
+
   useEffect(() => {
     const saved = localStorage.getItem("appSettings");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setSettings(parsed);
-    }
+    if (saved) setSettings(JSON.parse(saved));
   }, []);
+
+  useEffect(() => {
+    if (!facultyData?.facultyId) return;
+
+    const fetchSchedule = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `https://upasthiti-backend-production.up.railway.app/api/faculty/schedule?facultyId=${facultyData.facultyId}`
+        );
+        setSchedule(res.data.schedule || []);
+        setTotalWeeklyHours(res.data.count || 0);
+        setTotalSubjects(res.data.timetableMeta.uniqueSubjects);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    };
+
+    fetchSchedule();
+  }, [facultyData?.facultyId]);
 
   const getGreeting = () => {
     const hours = new Date().getHours();
@@ -113,129 +101,45 @@ export default function Dashboard() {
       );
 
       const data = await uploadRes.json();
-      const imageUrl = data.secure_url;
 
       await axios.patch(
         "https://upasthiti-backend-production.up.railway.app/api/admin/update",
         {
           uid: user.uid,
-          updates: { profilePicture: imageUrl },
+          updates: { profilePicture: data.secure_url },
         }
       );
 
-      setFacultyData((prev: Faculty) =>
-        prev ? { ...prev, profilePicture: imageUrl } : prev
+      setFacultyData((prev: any) =>
+        prev ? { ...prev, profilePicture: data.secure_url } : prev
       );
-    } catch (err) {
-      console.error(err);
-      alert("Failed to upload profile picture.");
     } finally {
       setIsUploadingImage(false);
     }
   };
 
-  // derive stats similar to screenshot
-  const todaysClassesCount = (() => {
-    // try to derive from facultyData.timetable or fallback to sample
-    const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
-    const tts = facultyData?.timetable || [];
-    if (!tts || tts.length === 0) return 0;
-    // timetable array assumed: [{ day: "Monday", schedule: [{ time, subjectCode, teacherID, classRoomID, subjectName }] }]
-    const todayRow = tts.find(
-      (d: any) => (d.day || "").toLowerCase() === today.toLowerCase()
-    );
-    if (!todayRow) return 0;
-    return Array.isArray(todayRow.schedule) ? todayRow.schedule.length : 0;
-  })();
-
-  // sample weekly hours and total subjects fallback:
-  const totalWeeklyHours = 8.15;
-  const totalSubjects = facultyData?.subjects?.length || 10;
-
-  // Build today's schedule items (best-effort)
-  const todaysSchedule = (() => {
-    const weekdays = new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-    });
-    const tts = facultyData?.timetable || [];
-
-    // find by day name, otherwise take first day's schedule as fallback
-    let dayObj =
-      tts?.find(
-        (d: any) => d.day && d.day.toLowerCase() === weekdays.toLowerCase()
-      ) || tts?.[0];
-
-    if (
-      !dayObj ||
-      !Array.isArray(dayObj.schedule) ||
-      dayObj.schedule.length === 0
-    ) {
-      // fallback sample schedule (matches screenshot structure)
-      return [
-        {
-          subjectName: "Database Management Systems",
-          subjectCode: "CS301",
-          room: "Room 301",
-          time: "09:00 AM - 10:00 AM",
-        },
-        {
-          subjectName: "Database Management Systems",
-          subjectCode: "CS301",
-          room: "Room 301",
-          time: "09:00 AM - 10:00 AM",
-        },
-        {
-          subjectName: "Database Management Systems",
-          subjectCode: "CS301",
-          room: "Room 301",
-          time: "09:00 AM - 10:00 AM",
-        },
-        {
-          subjectName: "Database Management Systems",
-          subjectCode: "CS301",
-          room: "Room 301",
-          time: "09:00 AM - 10:00 AM",
-        },
-        {
-          subjectName: "Database Management Systems",
-          subjectCode: "CS301",
-          room: "Room 301",
-          time: "09:00 AM - 10:00 AM",
-        },
-      ];
-    }
-
-    return dayObj.schedule.map((s: any) => ({
-      subjectName: s.subjectName || s.subject || s.subjectCode || "Unknown",
-      subjectCode: s.subjectCode || s.subject || s.code || "N/A",
-      room: s.classRoomID || s.room || "TBD",
-      time: s.time || "TBD",
-    }));
-  })();
-
-  const timetableButtons = ["CSE-AM", "AIML-A", "AIML-B", "AIDS", "VLSI"];
+  const todaysSchedule = schedule
+    .filter((item: any) => item.day === today)
+    .sort((a: any, b: any) => a.period - b.period);
 
   return (
     <div className="w-full min-h-screen bg-[#fafafa] p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search your things"
-            className="w-full rounded-lg border border-gray-300 px-12 py-3 text-sm shadow-sm focus:outline-none"
-          />
-        </div>
-
-        <div className="flex items-center gap-4 ml-6">
-          <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center bg-white">
-            <Bell className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-      </div>
-
+      {/* Profile Section */}
       <section className="rounded-2xl bg-white border border-gray-300 p-6 mb-6 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        {!facultyData ? (
+          <div className="flex items-center gap-6 animate-pulse">
+            <div className="w-28 h-28 rounded-full bg-gray-200" />
+            <div className="flex-1 space-y-3">
+              <div className="h-8 bg-gray-200 rounded w-64" />
+              <div className="h-4 bg-gray-200 rounded w-96" />
+              <div className="flex gap-4 mt-3">
+                <div className="h-4 bg-gray-200 rounded w-40" />
+                <div className="h-4 bg-gray-200 rounded w-48" />
+                <div className="h-4 bg-gray-200 rounded w-32" />
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="flex items-center gap-6">
             <div className="relative w-28 h-28">
               {facultyData?.profilePicture ? (
@@ -254,10 +158,10 @@ export default function Dashboard() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute bottom-0 right-0 bg-red-500 cursor-pointer text-white p-2 rounded-full border"
-                title="Change profile"
               >
-                <Camera className="w-4 h-4" color="white" />
+                <Camera className="w-4 h-4" />
               </button>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -265,9 +169,10 @@ export default function Dashboard() {
                 className="hidden"
                 onChange={handleProfilePictureChange}
               />
+
               {isUploadingImage && (
                 <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
             </div>
@@ -283,8 +188,7 @@ export default function Dashboard() {
 
               <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-700">
                 <p>
-                  <b>Faculty ID:</b>{" "}
-                  {facultyData?.facultyId || "UD1230R9234FU23"}
+                  <b>Faculty ID:</b> {facultyData?.facultyId || "UD1230R9234FU23"}
                 </p>
                 <p>
                   <b>Email:</b>{" "}
@@ -301,69 +205,149 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
+
+      {/* Stats Cards */}
       <section>
         <div className="flex gap-4 mb-5 justify-between">
           <div className="min-w-[140px] w-full rounded-xl border border-gray-300 p-4 text-center bg-[#fff]">
-            <p className="text-2xl font-bold">{todaysSchedule.length}</p>
-            <p className="text-sm text-gray-600 mt-1">Today's Classes</p>
+            {loading ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-8 bg-gray-200 rounded w-12 mx-auto" />
+                <div className="h-4 bg-gray-200 rounded w-24 mx-auto" />
+              </div>
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{todaysSchedule.length}</p>
+                <p className="text-sm text-gray-600 mt-1">Today's Classes</p>
+              </>
+            )}
           </div>
 
           <div className="min-w-[140px] w-full rounded-xl border border-gray-300 p-4 text-center bg-[#fff]">
-            <p className="text-2xl font-bold">{totalWeeklyHours}</p>
-            <p className="text-sm text-gray-600 mt-1">Total Weekly Hours</p>
+            {loading ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-8 bg-gray-200 rounded w-12 mx-auto" />
+                <div className="h-4 bg-gray-200 rounded w-28 mx-auto" />
+              </div>
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{totalWeeklyHours}</p>
+                <p className="text-sm text-gray-600 mt-1">Total Weekly Hours</p>
+              </>
+            )}
           </div>
 
           <div className="min-w-[140px] w-full rounded-xl border border-gray-300 p-4 text-center bg-[#fff]">
-            <p className="text-2xl font-bold">{totalSubjects}</p>
-            <p className="text-sm text-gray-600 mt-1">Total Subjects</p>
+            {loading ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-8 bg-gray-200 rounded w-12 mx-auto" />
+                <div className="h-4 bg-gray-200 rounded w-24 mx-auto" />
+              </div>
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{totalSubjects}</p>
+                <p className="text-sm text-gray-600 mt-1">Total Subjects</p>
+              </>
+            )}
           </div>
         </div>
       </section>
+
+      {/* Today's Schedule */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white border border-gray-300 rounded-2xl p-4 shadow-sm">
+        <div className="lg:col-span-3 bg-white border border-gray-300 rounded-2xl p-4 shadow-sm">
           <h3 className="text-xl font-bold px-4 py-2">Today's Schedule</h3>
+          <h4 className="text-base font-bold px-4 capitalize">{today}</h4>
+          
           <div className="space-y-3 px-2 py-2">
-            {todaysSchedule.map((item: any, idx: number) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between border border-gray-300 rounded-lg p-3 bg-[#fff]"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-500">
-                    ⏱️
+            {loading ? (
+              // Skeleton loading for schedule
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between border border-gray-300 rounded-lg p-3 bg-[#fff] animate-pulse"
+                  >
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-gray-200" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-5 bg-gray-200 rounded w-48" />
+                        <div className="h-4 bg-gray-200 rounded w-32" />
+                        <div className="h-3 bg-gray-200 rounded w-64" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="h-4 bg-gray-200 rounded w-20" />
+                      <div className="h-8 bg-gray-200 rounded w-32" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold">{item.subjectName}</p>
-                    <p className="text-sm text-gray-500">
-                      {item.subjectCode} - {item.room}
-                    </p>
-                  </div>
-                </div>
+                ))}
+              </>
+            ) : todaysSchedule.length > 0 ? (
+              todaysSchedule.map((item: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between border border-gray-300 rounded-lg p-3 bg-[#fff]"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-500">
+                      <Clock className="w-4 h-4" />
+                    </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="text-sm text-gray-500">{item.time}</div>
-                  <button className="bg-green-200 text-green-800 px-4 py-1 rounded-md text-sm">
-                    Take Attendance
-                  </button>
+                    <div>
+                      <p className="font-semibold">{item.subjectName}</p>
+
+                      <p className="text-sm text-gray-500">
+                        {item.subjectCode} • Room {item.room}
+                      </p>
+
+                      <div className="mt-1 text-sm text-gray-400 flex flex-wrap gap-x-2">
+                        <span>
+                          {item.branch}-{item.section}
+                        </span>
+                        <span>•</span>
+                        <span>Sem {item.semester}</span>
+                        <span>•</span>
+                        <span className="capitalize">{item.type}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-gray-500 whitespace-nowrap">
+                      {item.time}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        router.push(
+                          `/faculty/dashboard/takeAttendance?branch=${
+                            item.branch
+                          }&section=${item.section}&subjectCode=${
+                            item.subjectCode
+                          }&semester=${item.semester}${
+                            item.type == "lab"
+                              ? `&groupnumber=${item.groupNumber}`
+                              : ""
+                          }&period=${item.period}&subjectName=${
+                            item.subjectName
+                          }&facultyId=${facultyData.facultyId}`
+                        );
+                      }}
+                      className="bg-green-200 text-green-800 px-4 py-1 rounded-md text-sm cursor-pointer"
+                    >
+                      Take Attendance
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No classes scheduled for today
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-300 rounded-2xl p-6 shadow-sm">
-          <h3 className="text-xl font-bold text-center mb-4">Time-Table</h3>
-          <div className="flex flex-col gap-3">
-            {timetableButtons.map((t) => (
-              <button
-                key={t}
-                className="w-full border border-gray-300 rounded-lg py-3 text-lg font-medium bg-[#f6fff6]"
-              >
-                {t}
-              </button>
-            ))}
+            )}
           </div>
         </div>
       </div>
