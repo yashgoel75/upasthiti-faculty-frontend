@@ -9,6 +9,8 @@ interface AuthContextType {
   user: any;
   setFacultyData: any;
   facultyData: any;
+  schoolData: any;
+  setSchoolData: any;
   loading: boolean;
 }
 
@@ -20,6 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<any>(null);
   const [facultyData, setFacultyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [schoolData, setSchoolData] = useState<any>(null);
 
   // Safe JSON parse
   const safeParse = (value: string | null) => {
@@ -36,9 +39,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         `https://upasthiti-backend-production.up.railway.app/api/faculty?uid=${uid}`
       );
       const data = res.data;
-      console.log(res.data.data);
+      console.log(res.data);
 
       setFacultyData(res.data.data);
+      // setSchoolData(data.data.data.school);
       // localStorage.setItem("facultyData", JSON.stringify(data));
 
       return res.data.data;
@@ -87,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // }, [facultyData]);
 
   return (
-    <AuthContext.Provider value={{ user, setFacultyData, facultyData, loading }}>
+    <AuthContext.Provider value={{ user, setFacultyData, facultyData, schoolData, setSchoolData, loading }}>
       {children}
     </AuthContext.Provider>
   );

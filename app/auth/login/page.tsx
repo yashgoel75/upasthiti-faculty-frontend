@@ -148,7 +148,7 @@ export default function Login() {
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row min-h-screen inter-normal">
+      <div className="flex flex-col lg:flex-row min-h-screen max-h-screen inter-normal">
         <div className="hidden lg:block relative lg:w-[60%] shadow-lg ml-5 my-5 rounded-xl clip-trapezium overflow-hidden">
           <Image
             src={campus}

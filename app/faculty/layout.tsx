@@ -54,7 +54,6 @@ export default function FacultyLayout({
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", route: "/faculty/dashboard" },
-    { icon: BarChart3, label: "Analytics", route: "/faculty/analytics" },
     { icon: Calendar, label: "Time Table", route: "/faculty/timetable" },
     { icon: Bell, label: "Notify Parents", route: "/faculty/notify" },
     { icon: UserIcon, label: "Account", route: "/faculty/account" },

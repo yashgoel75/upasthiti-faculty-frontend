@@ -36,7 +36,8 @@ export default function Dashboard() {
     },
   });
 
-  const today = "tuesday";
+  const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const today = dayNames[new Date().getDay()];
 
   useEffect(() => {
     const saved = localStorage.getItem("appSettings");
@@ -336,7 +337,7 @@ export default function Dashboard() {
                           }&facultyId=${facultyData.facultyId}`
                         );
                       }}
-                      className="bg-green-200 text-green-800 px-4 py-1 rounded-md text-sm cursor-pointer"
+                      className="bg-green-200 font-medium text-green-800 px-3 py-1 rounded-md text-sm cursor-pointer"
                     >
                       Take Attendance
                     </button>
